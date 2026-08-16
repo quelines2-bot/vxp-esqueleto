@@ -1,0 +1,42 @@
+#include "vmsys.h"
+#include "vmgfx.h"
+
+// ID do aplicativo gerado pelo sistema
+VMINT g_app_id = -1; 
+
+// Declaração da função que gerencia os eventos do celular
+void handle_sysevt(VMINT message, VMINT param);
+
+// 1. PONTO DE ENTRADA OBRIGATÓRIO (Equivalente ao main() do C padrão)
+void vm_main(void) {
+    // Registra o aplicativo no sistema operacional do celular
+    g_app_id = vm_reg_sysevt_callback(handle_sysevt);
+}
+
+// 2. GERENCIADOR DE EVENTOS DO SISTEMA
+void handle_sysevt(VMINT message, VMINT param) {
+    switch (message) {
+        
+        // O aplicativo acabou de ser aberto
+        case VM_MSG_CREATE:
+            // Inicialize suas variáveis, aloque memória e carregue imagens aqui
+            break;
+            
+        // O aplicativo ganhou o foco na tela
+        case VM_MSG_ACTIVE:
+            // Desenhe a interface inicial na tela do celular
+            vm_gfx_flush_layer_by_id(g_app_id);
+            break;
+            
+        // O aplicativo foi minimizado (ex: o usuário recebeu uma ligação)
+        case VM_MSG_INACTIVE:
+            // Pause a música ou o processamento do jogo aqui
+            break;
+            
+        // O usuário fechou o aplicativo
+        case VM_MSG_QUIT:
+            // OBRIGATÓRIO: Libere toda a memória RAM usada para não travar o celular
+            vm_exit_app();
+            break;
+    }
+}
