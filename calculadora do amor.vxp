@@ -1,0 +1,112 @@
+#include "vmsys.h"
+#include "vmgfx.h"
+#include "vmio.h"
+
+VMINT g_app_id = -1;
+VMINT g_resultado_amor = -1; // -1 significa que o teste ainda não foi feito
+
+// Protótipos das funções do sistema
+void gerenciar_sistema(VMINT mensagem, VMINT parametro);
+void gerenciar_teclado(VMINT evento, VMINT tecla);
+void calcular_amor(void);
+void desenhar_tela(void);
+
+void vm_main(void) {
+    // Liga o aplicativo aos eventos do celular e teclado
+    g_app_id = vm_reg_sysevt_callback(gerenciar_sistema);
+    vm_reg_keyboard_callback(gerenciar_teclado);
+}
+
+// 1. GERENCIADOR VISUAL (Desenha os elementos na tela do celular)
+void desenhar_tela(void) {
+    // Pega o canvas/camada gráfica do aplicativo
+    VMUINT8* buffer_tela = vm_gfx_get_layer_buffer(g_app_id);
+    
+    if (buffer_tela == NULL) return;
+
+    // Limpa a tela pintando o fundo de branco (RGB: 255, 255, 255)
+    vm_gfx_clear_screen_with_color(255, 255, 255);
+
+    // Configura a cor do texto para Vermelho (RGB: 220, 20, 60)
+    vm_gfx_set_text_color(220, 20, 60);
+
+    // Título do Aplicativo na tela
+    VMWSTR texto_titulo = (VMWSTR)L"CALCULADORA DO AMOR";
+    vm_gfx_textout(buffer_tela, 20, 20, texto_titulo, wstrlen(texto_titulo));
+
+    // Instruções ou Exibição do Resultado
+    if (g_resultado_amor == -1) {
+        vm_gfx_set_text_color(0, 0, 0); // Texto preto para instruções
+        VMWSTR texto_instrucao = (VMWSTR)L"Aperte OK para Calcular!";
+        vm_gfx_textout(buffer_tela, 20, 100, texto_instrucao, wstrlen(texto_instrucao));
+    } else {
+        // Exibe a porcentagem calculada
+        char str_resultado[32];
+        VMWCHAR wstr_resultado[32];
+        
+        vm_sprintf(str_resultado, "Compatibilidade: %d%%", g_resultado_amor);
+        vm_ascii_to_ucs2(wstr_resultado, 32, str_resultado);
+        
+        vm_gfx_textout(buffer_tela, 20, 100, wstr_resultado, wstrlen(wstr_resultado));
+        
+        // Mensagem baseada no resultado
+        VMWSTR texto_status;
+        if (g_resultado_amor > 70) {
+            texto_status = (VMWSTR)L"Combinacao Perfeita! <3";
+        } else if (g_resultado_amor > 40) {
+            texto_status = (VMWSTR)L"Da para tentar...";
+        } else {
+            texto_status = (VMWSTR)L"Melhor ser apenas amigos.";
+        }
+        vm_gfx_textout(buffer_tela, 20, 140, texto_status, wstrlen(texto_status));
+    }
+
+    // Atualiza fisicamente o display do celular para mostrar o que foi desenhado
+    vm_gfx_flush_layer_by_id(g_app_id);
+}
+
+// 2. LÓGICA DO CÁLCULO (Gera um número pseudo-aleatório baseado no relógio do chip)
+void calcular_amor(void) {
+    VMUINT tempo_atual = vm_get_tick_count();
+    
+    // Gera uma porcentagem de 0 a 100 baseada na variação de milissegundos
+    g_resultado_amor = (tempo_atual % 101); 
+    
+    // Redesenha a interface para exibir o novo valor
+    desenhar_tela();
+}
+
+// 3. CAPTURA DAS TECLAS DO CELULAR
+void gerenciar_teclado(VMINT evento, VMINT tecla) {
+    if (evento == VM_KEY_EVENT_DOWN) {
+        switch (tecla) {
+            
+            // Pressionar o botão central inicia o cálculo
+            case VM_KEY_OK:
+                calcular_amor();
+                break;
+                
+            // Sair do app usando o botão superior direito ou o botão de desligar
+            case VM_KEY_RIGHT_SOFTKEY:
+            case VM_KEY_POWER:
+                vm_exit_app();
+                break;
+        }
+    }
+}
+
+// 4. GERENCIADOR DO SISTEMA OPERACIONAL
+void gerenciar_sistema(VMINT mensagem, VMINT parametro) {
+    switch (mensagem) {
+        case VM_MSG_CREATE:
+            break;
+            
+        case VM_MSG_ACTIVE:
+            desenhar_tela(); // Força o desenho quando a janela abrir
+            break;
+            
+        case VM_MSG_QUIT:
+            vm_exit_app();
+            break;
+    }
+}
