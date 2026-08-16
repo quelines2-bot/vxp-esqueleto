@@ -1,0 +1,75 @@
+#include "vmsys.h"
+#include "vmgfx.h"
+
+VMINT g_app_id = -1; 
+
+// Declaração das funções de escuta do sistema e do teclado
+void gerenciar_sistema(VMINT mensagem, VMINT parametro);
+void gerenciar_teclado(VMINT evento, VMINT tecla);
+
+void vm_main(void) {
+    // Liga o aplicativo ao sistema e ao teclado do celular
+    g_app_id = vm_reg_sysevt_callback(gerenciar_sistema);
+    vm_reg_keyboard_callback(gerenciar_teclado);
+}
+
+// 1. GERENCIADOR DO TECLADO FÍSICO
+void gerenciar_teclado(VMINT evento, VMINT tecla) {
+    
+    // Executa a ação apenas quando o usuário APERTA o botão (DOWN)
+    if (evento == VM_KEY_EVENT_DOWN) {
+        switch (tecla) {
+            
+            // Direcionais (Setas)
+            case VM_KEY_UP:
+                // Código para mover para CIMA ou rolar menu
+                break;
+                
+            case VM_KEY_DOWN:
+                // Código para mover para BAIXO
+                break;
+                
+            case VM_KEY_LEFT:
+                // Código para mover para a ESQUERDA
+                break;
+                
+            case VM_KEY_RIGHT:
+                // Código para mover para a DIREITA
+                break;
+                
+            // Botões de Confirmação e Menu
+            case VM_KEY_OK:
+                // Usuário apertou o botão central de confirmação
+                break;
+                
+            case VM_KEY_LEFT_SOFTKEY:
+                // Botão superior esquerdo (Geralmente usado para "Menu" ou "Opções")
+                break;
+                
+            case VM_KEY_RIGHT_SOFTKEY:
+                // Botão superior direito (Geralmente usado para "Voltar" ou "Sair")
+                vm_exit_app(); // Fecha o app com segurança
+                break;
+                
+            // Botão vermelho de desligar/encerrar chamada
+            case VM_KEY_POWER:
+                vm_exit_app(); // Garante o fechamento imediato se apertar Power
+                break;
+        }
+    }
+}
+
+// 2. CICLO DE VIDA DO SISTEMA
+void gerenciar_sistema(VMINT mensagem, VMINT parametro) {
+    switch (mensagem) {
+        case VM_MSG_CREATE:
+            break;
+        case VM_MSG_ACTIVE:
+            vm_gfx_flush_layer_by_id(g_app_id);
+            break;
+        case VM_MSG_QUIT:
+            vm_exit_app();
+            break;
+    }
+}
+
